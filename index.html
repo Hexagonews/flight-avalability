@@ -3,105 +3,24 @@
 <head>
 <title>LEGO Airport</title>
 <style>
-body {
-    font-family: "Comic Sans MS", Arial;
-    background: linear-gradient(#8fd3ff, #ffffff);
-    text-align:center;
-    margin:0;
-    padding:0;
-}
-
-h1 {
-    font-size: 42px;
-    margin:10px;
-}
-
-button {
-    font-size:18px;
-    padding:10px 20px;
-    border:none;
-    border-radius:12px;
-    background:#ffcc00;
-    cursor:pointer;
-    box-shadow:2px 2px 5px #888;
-    margin:5px;
-}
-
-button:hover {
-    background:#ffd633;
-}
-
-table {
-    margin:auto;
-    margin-top:20px;
-    border-collapse: collapse;
-    background:white;
-    border-radius:15px;
-    overflow:hidden;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
-}
-
-th {
-    background:#004aad;
-    color:white;
-    padding:12px;
-}
-
-td {
-    padding:10px;
-    font-size:16px;
-}
-
-.small {
-    background:#d1f7d1;
-}
-
-.big {
-    background:#ffe0b3;
-}
-
+body { font-family: "Comic Sans MS", Arial; background: linear-gradient(#8fd3ff,#ffffff); text-align:center; margin:0; padding:0; }
+h1 { font-size:42px; margin:10px; }
+button { font-size:18px; padding:10px 20px; border:none; border-radius:12px; background:#ffcc00; cursor:pointer; box-shadow:2px 2px 5px #888; margin:5px; }
+button:hover { background:#ffd633; }
+table { margin:auto; margin-top:20px; border-collapse: collapse; background:white; border-radius:15px; overflow:hidden; box-shadow: 0px 4px 10px rgba(0,0,0,0.2); }
+th { background:#004aad; color:white; padding:12px; }
+td { padding:10px; font-size:16px; }
+.small { background:#d1f7d1; }
+.big { background:#ffe0b3; }
 .g1 { color:#008000; font-weight:bold; }
 .g2 { color:#b35c00; font-weight:bold; }
 .g3 { color:#990000; font-weight:bold; }
-
-#towerView {
-    display:none;
-    background:#fff3b3;
-    padding:20px;
-    margin:20px auto;
-    border-radius:15px;
-    width:90%;
-    max-width:800px;
-    box-shadow:0px 4px 15px rgba(0,0,0,0.3);
-}
-
-.gateSection {
-    margin:15px 0;
-    padding:10px;
-    border:2px dashed #888;
-    border-radius:12px;
-    min-height:50px;
-}
-
-.flightCard {
-    background:#ffeb99;
-    margin:5px;
-    padding:8px;
-    border-radius:8px;
-    cursor:pointer;
-    display:inline-block;
-    min-width:120px;
-    text-align:center;
-    font-weight:bold;
-}
-
+#towerView { display:none; background:#fff3b3; padding:20px; margin:20px auto; border-radius:15px; width:90%; max-width:800px; box-shadow:0px 4px 15px rgba(0,0,0,0.3); }
+.gateSection { margin:15px 0; padding:10px; border:2px dashed #888; border-radius:12px; min-height:50px; }
+.flightCard { background:#ffeb99; margin:5px; padding:8px; border-radius:8px; cursor:pointer; display:inline-block; min-width:120px; text-align:center; font-weight:bold; }
 .smallCard { background:#d1f7d1; }
 .bigCard { background:#ffe0b3; }
-
-.dragging {
-    opacity:0.5;
-}
-
+.dragging { opacity:0.5; }
 </style>
 </head>
 <body>
@@ -109,13 +28,11 @@ td {
 <h1>🛫 LEGO Mini Airport</h1>
 <p>🕙 Flights run from 10:00 AM to 2:00 PM</p>
 
-<button onclick="generateFlights()">🎲 New LEGO Day</button>
+<button onclick="resetSeats()">🌞 Next Day</button>
 <button onclick="openTower()">🗼 Control Tower</button>
 
 <table id="flightTable">
-<tr>
-<th>Airline</th><th>Flight</th><th>Time</th><th>Gate</th><th>Seats</th><th>Book</th>
-</tr>
+<tr><th>Airline</th><th>Flight</th><th>Time</th><th>Gate</th><th>Seats</th><th>Book</th></tr>
 </table>
 
 <div id="towerView">
@@ -127,42 +44,38 @@ td {
 </div>
 
 <script>
-const airlines = ["Cargo A","Star Allegiance","Police Airlines","Eagle Alliance"];
-let flights = [];
+const airlines=["Cargo A","Star Allegiance","Police Airlines","Eagle Alliance"];
+let flights=[];
 
-function randomTime(){
-    let m = Math.floor(Math.random()*(14*60-10*60))+10*60;
-    let h=Math.floor(m/60), mm=m%60;
-    let ampm=h>=12?"PM":"AM"; if(h>12)h-=12;
-    if(mm<10)mm="0"+mm;
-    return h+":"+mm+" "+ampm;
-}
-
+function randomTime(){ let m=Math.floor(Math.random()*(14*60-10*60))+10*60; let h=Math.floor(m/60), mm=m%60; let ampm=h>=12?"PM":"AM"; if(h>12)h-=12; if(mm<10)mm="0"+mm; return h+":"+mm+" "+ampm;}
 function randomBigSeats(){ return Math.floor(Math.random()*3)+6; }
 
 function generateFlights(){
     flights=[];
     const table=document.getElementById("flightTable");
     table.innerHTML=`<tr><th>Airline</th><th>Flight</th><th>Time</th><th>Gate</th><th>Seats</th><th>Book</th></tr>`;
-    let g2=0,g3=0;
-
     airlines.forEach(a=>{
         for(let f=1;f<=2;f++){
             for(let d=1;d<=2;d++){
                 let gate,seats,type;
                 if(a=="Star Allegiance"){ gate="Gate 1"; seats=2; type="small"; }
                 else if(a=="Cargo A"){ gate="Gate 3"; seats=randomBigSeats(); type="big"; }
-                else { gate=(g2<=g3?"Gate 2":"Gate 2"); seats=randomBigSeats(); type="big"; g2++; } 
-
-                flights.push({airline:a,name:a[0]+f+"-"+d,time:randomTime(),gate, seats,type});
+                else { gate="Gate 2"; seats=randomBigSeats(); type="big"; }
+                flights.push({airline:a,name:a[0]+f+"-"+d,time:randomTime(),gate,seats,type});
             }
         }
     });
+    flights.sort((a,b)=>{
+        let ta=parseInt(a.time.replace(":","").replace(" AM","").replace(" PM",""));
+        let tb=parseInt(b.time.replace(":","").replace(" AM","").replace(" PM",""));
+        return ta-tb;
+    });
+    updateTable();
+}
 
-    // Sort flights by time for tower
-    flights.sort((a,b)=>parseInt(a.time.replace(":","").replace(" AM","").replace(" PM",""))-
-                      parseInt(b.time.replace(":","").replace(" AM","").replace(" PM","")));
-
+function updateTable(){
+    const table=document.getElementById("flightTable");
+    table.innerHTML=`<tr><th>Airline</th><th>Flight</th><th>Time</th><th>Gate</th><th>Seats</th><th>Book</th></tr>`;
     flights.forEach((f,i)=>{
         let r=table.insertRow();
         r.className=f.type;
@@ -176,6 +89,15 @@ function generateFlights(){
     });
 }
 
+function resetSeats(){
+    flights.forEach(f=>{
+        if(f.type=="small") f.seats=2;
+        else f.seats=randomBigSeats();
+    });
+    updateTable();
+    renderTower();
+}
+
 function bookSeat(i){
     if(flights[i].seats>0){
         flights[i].seats--;
@@ -184,41 +106,29 @@ function bookSeat(i){
 }
 
 // Control Tower
-
-function openTower(){
-    document.getElementById("towerView").style.display="block";
-    document.getElementById("flightTable").style.display="none";
-    renderTower();
-}
-
-function closeTower(){
-    document.getElementById("towerView").style.display="none";
-    document.getElementById("flightTable").style.display="table";
-}
+function openTower(){ document.getElementById("towerView").style.display="block"; document.getElementById("flightTable").style.display="none"; renderTower();}
+function closeTower(){ document.getElementById("towerView").style.display="none"; document.getElementById("flightTable").style.display="table"; }
 
 function renderTower(){
-    const gates = {Gate1:[], Gate2:[], Gate3:[]};
+    const gates={Gate1:[],Gate2:[],Gate3:[]};
     flights.forEach(f=> gates[f.gate.replace(" ","")]?.push(f));
-
     ["Gate1","Gate2","Gate3"].forEach(g=>{
         let div=document.getElementById(g);
-        div.innerHTML=`<h3>${div.querySelector("h3").innerText}</h3>`; // Keep header
-        gates[g].sort((a,b)=>parseInt(a.time.replace(":","").replace(" AM","").replace(" PM",""))-
-                           parseInt(b.time.replace(":","").replace(" AM","").replace(" PM",""))).forEach(flight=>{
+        div.innerHTML=`<h3>${div.querySelector("h3").innerText}</h3>`;
+        gates[g].sort((a,b)=>parseInt(a.time.replace(":","").replace(" AM","").replace(" PM",""))-parseInt(b.time.replace(":","").replace(" AM","").replace(" PM",""))).forEach(flight=>{
             let card=document.createElement("div");
             card.className="flightCard "+(flight.type=="small"?"smallCard":"bigCard");
             card.innerHTML=`${flight.airline}<br>${flight.name}<br>${flight.time}<br>Seats: ${flight.seats}`;
-            card.draggable = (flight.gate!="Gate 1"); // Only big planes draggable
-            card.ondragstart = e=>{e.dataTransfer.setData("text/plain", flight.name); card.classList.add("dragging");};
-            card.ondragend = e=>{card.classList.remove("dragging"); renderTower();};
+            card.draggable=(flight.gate!="Gate 1");
+            card.ondragstart=e=>{e.dataTransfer.setData("text/plain", flight.name); card.classList.add("dragging");};
+            card.ondragend=e=>{card.classList.remove("dragging"); renderTower();};
             div.appendChild(card);
         });
-
-        div.ondragover = e=>{e.preventDefault();};
-        div.ondrop = e=>{
-            let name = e.dataTransfer.getData("text/plain");
-            let f = flights.find(fl=>fl.name===name);
-            if(g!=="Gate1") f.gate = g.replace("Gate","Gate "); // Move to new gate
+        div.ondragover=e=>{e.preventDefault();};
+        div.ondrop=e=>{
+            let name=e.dataTransfer.getData("text/plain");
+            let f=flights.find(fl=>fl.name===name);
+            if(g!=="Gate1") f.gate=g.replace("Gate","Gate ");
             renderTower();
         };
     });
@@ -229,3 +139,4 @@ generateFlights();
 
 </body>
 </html>
+
