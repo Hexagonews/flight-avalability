@@ -45,10 +45,28 @@ const airlines=[
 
 let flights=[];
 
-// Generate random flight times between 10am and 2pm
-function randTime(){ return 600 + Math.floor(Math.random()*240); }
+// Generate flights with fixed times
+function generateFlights(){
+  flights = [
+    {airline:"Star Allegiance ✨",type:"small",seats:2,max:2,time:600,gate:1,status:"WAITING"},  // 10:00 AM
+    {airline:"Star Allegiance ✨",type:"small",seats:2,max:2,time:720,gate:1,status:"WAITING"},  // 12:00 PM
 
-// Convert minutes to 12-hour time
+    {airline:"Cargo A 📦",type:"cargo",seats:8,max:8,time:630,gate:"Cargo",status:"WAITING"},   // 10:30 AM
+    {airline:"Cargo A 📦",type:"cargo",seats:8,max:8,time:810,gate:"Cargo",status:"WAITING"},   // 1:30 PM
+
+    {airline:"Police Airlines 🚓",type:"big",seats:6,max:6,time:660,gate:2,status:"WAITING"},    // 11:00 AM
+    {airline:"Police Airlines 🚓",type:"big",seats:6,max:6,time:780,gate:2,status:"WAITING"},    // 1:00 PM
+
+    {airline:"Eagle Alliance 🦅",type:"big",seats:8,max:8,time:690,gate:3,status:"WAITING"},     // 11:30 AM
+    {airline:"Eagle Alliance 🦅",type:"big",seats:8,max:8,time:840,gate:3,status:"WAITING"},     // 2:00 PM
+  ];
+}
+generateFlights();
+
+// Current time in minutes
+function nowMin(){ let d=new Date(); return d.getHours()*60+d.getMinutes(); }
+
+// Convert minutes to 12-hour clock
 function formatTime(min){
   let h=Math.floor(min/60);
   let m=(min%60).toString().padStart(2,"0");
@@ -56,28 +74,6 @@ function formatTime(min){
   h=h%12||12;
   return h+":"+m+" "+ap;
 }
-
-// Generate flights
-function generateFlights(){
-  flights=[];
-  airlines.forEach(a=>{
-    for(let i=1;i<=2;i++){
-      flights.push({
-        airline:a.name,
-        type:a.type,
-        seats:a.seats,
-        max:a.seats,
-        time:randTime(),
-        gate:a.gate,
-        status:"WAITING"
-      });
-    }
-  });
-}
-generateFlights();
-
-// Current time in minutes
-function nowMin(){ let d=new Date(); return d.getHours()*60+d.getMinutes(); }
 
 // Update clock and flight statuses
 function updateClock(){
@@ -87,7 +83,7 @@ function updateClock(){
     if(f.status!=="DEPARTED"){
       if(nowMin()>=f.time){
         f.status=(f.seats<f.max)?"DEPARTED":"CANCELLED";
-      }else{
+      } else {
         f.status=(f.seats<f.max)?"WILL FLY":"WAITING";
       }
     }
@@ -152,6 +148,7 @@ render();
 
 </body>
 </html>
+
 
 
 
