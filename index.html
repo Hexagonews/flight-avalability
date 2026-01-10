@@ -1,142 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>LEGO Airport</title>
+<title>LEGO Airport Game</title>
 <style>
-body { font-family: "Comic Sans MS", Arial; background: linear-gradient(#8fd3ff,#ffffff); text-align:center; margin:0; padding:0; }
-h1 { font-size:42px; margin:10px; }
-button { font-size:18px; padding:10px 20px; border:none; border-radius:12px; background:#ffcc00; cursor:pointer; box-shadow:2px 2px 5px #888; margin:5px; }
-button:hover { background:#ffd633; }
-table { margin:auto; margin-top:20px; border-collapse: collapse; background:white; border-radius:15px; overflow:hidden; box-shadow: 0px 4px 10px rgba(0,0,0,0.2); }
-th { background:#004aad; color:white; padding:12px; }
-td { padding:10px; font-size:16px; }
-.small { background:#d1f7d1; }
-.big { background:#ffe0b3; }
-.g1 { color:#008000; font-weight:bold; }
-.g2 { color:#b35c00; font-weight:bold; }
-.g3 { color:#990000; font-weight:bold; }
-#towerView { display:none; background:#fff3b3; padding:20px; margin:20px auto; border-radius:15px; width:90%; max-width:800px; box-shadow:0px 4px 15px rgba(0,0,0,0.3); }
-.gateSection { margin:15px 0; padding:10px; border:2px dashed #888; border-radius:12px; min-height:50px; }
-.flightCard { background:#ffeb99; margin:5px; padding:8px; border-radius:8px; cursor:pointer; display:inline-block; min-width:120px; text-align:center; font-weight:bold; }
-.smallCard { background:#d1f7d1; }
-.bigCard { background:#ffe0b3; }
-.dragging { opacity:0.5; }
+body{margin:0;font-family:'Comic Sans MS',Arial;background:linear-gradient(#7dd7ff,#e9f9ff);}
+header{background:#1976d2;color:white;padding:10px;text-align:center;font-size:26px;}
+#clock{font-size:16px;}
+button{background:#ffeb3b;border:none;padding:8px 12px;margin:4px;border-radius:10px;font-weight:bold;cursor:pointer;}
+.flight{background:white;border-radius:20px;padding:10px;margin:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 5px 0 #bbb;transition:transform 2s,opacity 2s;}
+.small{border-left:10px solid #00c853;}
+.big{border-left:10px solid #ff9100;}
+.cargo{border-left:10px solid #6d4c41;}
+.departed{transform:translateX(1000px);opacity:0;}
+.status{font-weight:bold;}
+.gate{background:#fff;border-radius:20px;padding:10px;margin:10px;box-shadow:0 5px 0 #ccc;}
 </style>
 </head>
 <body>
 
-<h1>🛫 LEGO Mini Airport</h1>
-<p>🕙 Flights run from 10:00 AM to 2:00 PM</p>
+<header>
+🧱 LEGO Airport Control Tower  
+<div id="clock"></div>
+<button onclick="view='airport';render()">Airport</button>
+<button onclick="view='tower';render()">🗼 Control Tower</button>
+<button onclick="newDay()">🌞 Next Day</button>
+</header>
 
-<button onclick="resetSeats()">🌞 Next Day</button>
-<button onclick="openTower()">🗼 Control Tower</button>
-
-<table id="flightTable">
-<tr><th>Airline</th><th>Flight</th><th>Time</th><th>Gate</th><th>Seats</th><th>Book</th></tr>
-</table>
-
-<div id="towerView">
-<h2>🗼 Control Tower (Game Mode)</h2>
-<div id="Gate1" class="gateSection"><h3>Gate 1 – Star Allegiance</h3></div>
-<div id="Gate2" class="gateSection"><h3>Gate 2 – Big Planes</h3></div>
-<div id="Gate3" class="gateSection"><h3>Gate 3 – Big Planes</h3></div>
-<button onclick="closeTower()">⬅ Back to Airport</button>
-</div>
+<div id="airport"></div>
+<div id="tower" style="display:none;"></div>
 
 <script>
-const airlines=["Cargo A","Star Allegiance","Police Airlines","Eagle Alliance"];
+let view="airport";
+
+const airlines=[
+ {name:"Star Allegiance ✨",type:"small",seats:2,gate:1},
+ {name:"Cargo A 📦",type:"cargo",seats:8,gate:"Cargo"},
+ {name:"Police Airlines 🚓",type:"big",seats:6,gate:2},
+ {name:"Eagle Alliance 🦅",type:"big",seats:8,gate:3}
+];
+
 let flights=[];
 
-function randomTime(){ let m=Math.floor(Math.random()*(14*60-10*60))+10*60; let h=Math.floor(m/60), mm=m%60; let ampm=h>=12?"PM":"AM"; if(h>12)h-=12; if(mm<10)mm="0"+mm; return h+":"+mm+" "+ampm;}
-function randomBigSeats(){ return Math.floor(Math.random()*3)+6; }
-
+function randTime(){ return 600 + Math.floor(Math.random()*240); } // 10am-2pm
+function formatTime(min){ let h=Math.floor(min/60); let m=(min%60).toString().padStart(2,"0"); let ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+m+" "+ap; }
 function generateFlights(){
-    flights=[];
-    const table=document.getElementById("flightTable");
-    table.innerHTML=`<tr><th>Airline</th><th>Flight</th><th>Time</th><th>Gate</th><th>Seats</th><th>Book</th></tr>`;
-    airlines.forEach(a=>{
-        for(let f=1;f<=2;f++){
-            for(let d=1;d<=2;d++){
-                let gate,seats,type;
-                if(a=="Star Allegiance"){ gate="Gate 1"; seats=2; type="small"; }
-                else if(a=="Cargo A"){ gate="Gate 3"; seats=randomBigSeats(); type="big"; }
-                else { gate="Gate 2"; seats=randomBigSeats(); type="big"; }
-                flights.push({airline:a,name:a[0]+f+"-"+d,time:randomTime(),gate,seats,type});
-            }
-        }
-    });
-    flights.sort((a,b)=>{
-        let ta=parseInt(a.time.replace(":","").replace(" AM","").replace(" PM",""));
-        let tb=parseInt(b.time.replace(":","").replace(" AM","").replace(" PM",""));
-        return ta-tb;
-    });
-    updateTable();
+  flights=[];
+  airlines.forEach(a=>{
+    for(let i=1;i<=2;i++){
+      flights.push({airline:a.name,type:a.type,seats:a.seats,max:a.seats,time:randTime(),gate:a.gate,status:"WAITING"});
+    }
+  });
 }
-
-function updateTable(){
-    const table=document.getElementById("flightTable");
-    table.innerHTML=`<tr><th>Airline</th><th>Flight</th><th>Time</th><th>Gate</th><th>Seats</th><th>Book</th></tr>`;
-    flights.forEach((f,i)=>{
-        let r=table.insertRow();
-        r.className=f.type;
-        r.insertCell(0).innerText=f.airline;
-        r.insertCell(1).innerText=f.name;
-        r.insertCell(2).innerText=f.time;
-        let g=r.insertCell(3); g.innerText=f.gate; g.className=f.gate=="Gate 1"?"g1":f.gate=="Gate 2"?"g2":"g3";
-        r.insertCell(4).innerText=f.seats;
-        let b=document.createElement("button"); b.innerText="🧍 Book"; b.onclick=()=>bookSeat(i);
-        r.insertCell(5).appendChild(b);
-    });
-}
-
-function resetSeats(){
-    flights.forEach(f=>{
-        if(f.type=="small") f.seats=2;
-        else f.seats=randomBigSeats();
-    });
-    updateTable();
-    renderTower();
-}
-
-function bookSeat(i){
-    if(flights[i].seats>0){
-        flights[i].seats--;
-        document.getElementById("flightTable").rows[i+1].cells[4].innerText=flights[i].seats;
-    } else alert("🚫 Plane full!");
-}
-
-// Control Tower
-function openTower(){ document.getElementById("towerView").style.display="block"; document.getElementById("flightTable").style.display="none"; renderTower();}
-function closeTower(){ document.getElementById("towerView").style.display="none"; document.getElementById("flightTable").style.display="table"; }
-
-function renderTower(){
-    const gates={Gate1:[],Gate2:[],Gate3:[]};
-    flights.forEach(f=> gates[f.gate.replace(" ","")]?.push(f));
-    ["Gate1","Gate2","Gate3"].forEach(g=>{
-        let div=document.getElementById(g);
-        div.innerHTML=`<h3>${div.querySelector("h3").innerText}</h3>`;
-        gates[g].sort((a,b)=>parseInt(a.time.replace(":","").replace(" AM","").replace(" PM",""))-parseInt(b.time.replace(":","").replace(" AM","").replace(" PM",""))).forEach(flight=>{
-            let card=document.createElement("div");
-            card.className="flightCard "+(flight.type=="small"?"smallCard":"bigCard");
-            card.innerHTML=`${flight.airline}<br>${flight.name}<br>${flight.time}<br>Seats: ${flight.seats}`;
-            card.draggable=(flight.gate!="Gate 1");
-            card.ondragstart=e=>{e.dataTransfer.setData("text/plain", flight.name); card.classList.add("dragging");};
-            card.ondragend=e=>{card.classList.remove("dragging"); renderTower();};
-            div.appendChild(card);
-        });
-        div.ondragover=e=>{e.preventDefault();};
-        div.ondrop=e=>{
-            let name=e.dataTransfer.getData("text/plain");
-            let f=flights.find(fl=>fl.name===name);
-            if(g!=="Gate1") f.gate=g.replace("Gate","Gate ");
-            renderTower();
-        };
-    });
-}
-
 generateFlights();
-</script>
 
+function nowMin(){ let d=new Date(); return d.getHours()*60+d.getMinutes(); }
+
+function updateClock(){
+  let d=new Date();
+  clock.innerText=d.toLocaleTimeString();
+  flights.forEach(f=>{
+    if(f.status!=="DEPARTED"){
+      if(nowMin()>=f.time){
+        f.status=(f.seats<f.max)?"DEPARTED":"CANCELLED";
+      } else {
+        f.status=(f.seats<f.max)?"WILL FLY":"WAITING";
+      }
+    }
+  });
+  render();
+}
+setInterval(updateClock,1000);
+
+function book(flight){
+  if(flight.seats>0){ flight.seats--; render(); }
+}
+
+function newDay(){
+  flights.forEach(f=>{ f.seats=f.max; f.status="WAITING"; });
+  render();
+}
+
+function render(){
+  let list=[...flights].sort((a,b)=>a.time-b.time);
+  airport.innerHTML=""; tower.innerHTML="";
+
+  list.forEach(f=>{
+    let div=document.createElement("div");
+    div.className="flight "+f.type+(f.status==="DEPARTED"?" departed":"");
+    div.innerHTML=`
+      <div>
+        <b>${f.airline}</b><br>
+        🕒 ${formatTime(f.time)} | Gate ${f.gate}<br>
+        Seats: ${f.seats}/${f.max}
+      </div>
+      <div class="status">${f.status}</div>
+    `;
+    let btn=document.createElement("button");
+    btn.innerText="🧍 Book";
+    btn.onclick=()=>book(f);
+    div.appendChild(btn);
+    airport.appendChild(div);
+  });
+
+  ["1","2","3","Cargo"].forEach(g=>{
+    let gate=document.createElement("div");
+    gate.className="gate";
+    gate.innerHTML="<b>Gate "+g+"</b><br>";
+    list.filter(f=>f.gate==g).forEach(f=>{
+      gate.innerHTML+=`${formatTime(f.time)} - ${f.airline} (${f.status})<br>`;
+    });
+    tower.appendChild(gate);
+  });
+
+  airport.style.display=(view==="airport")?"block":"none";
+  tower.style.display=(view==="tower")?"block":"none";
+}
+
+render();
+</script>
 </body>
 </html>
+
 
