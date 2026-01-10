@@ -2,6 +2,8 @@
 <html>
 <head>
 <title>LEGO Airport Game</title>
+<!-- Favicon from your Google Drive -->
+<link rel="icon" type="image/png" href="https://drive.google.com/uc?export=view&id=1KWubCoLSiebfPt8dIChwIQonEBp3vEHL">
 <style>
 body{margin:0;font-family:'Comic Sans MS',Arial;background:linear-gradient(#7dd7ff,#e9f9ff);}
 header{background:#1976d2;color:white;padding:10px;text-align:center;font-size:26px;}
@@ -16,6 +18,7 @@ button{background:#ffeb3b;border:none;padding:8px 12px;margin:4px;border-radius:
 .gate{background:#fff;border-radius:20px;padding:10px;margin:10px;box-shadow:0 5px 0 #ccc;}
 </style>
 </head>
+
 <body>
 
 <header>
@@ -32,6 +35,7 @@ button{background:#ffeb3b;border:none;padding:8px 12px;margin:4px;border-radius:
 <script>
 let view="airport";
 
+// Airlines and planes
 const airlines=[
  {name:"Star Allegiance ✨",type:"small",seats:2,gate:1},
  {name:"Cargo A 📦",type:"cargo",seats:8,gate:"Cargo"},
@@ -41,20 +45,41 @@ const airlines=[
 
 let flights=[];
 
-function randTime(){ return 600 + Math.floor(Math.random()*240); } // 10am-2pm
-function formatTime(min){ let h=Math.floor(min/60); let m=(min%60).toString().padStart(2,"0"); let ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+m+" "+ap; }
+// Generate random flight times between 10am and 2pm
+function randTime(){ return 600 + Math.floor(Math.random()*240); }
+
+// Convert minutes to 12-hour time
+function formatTime(min){
+  let h=Math.floor(min/60);
+  let m=(min%60).toString().padStart(2,"0");
+  let ap=h>=12?"PM":"AM";
+  h=h%12||12;
+  return h+":"+m+" "+ap;
+}
+
+// Generate flights
 function generateFlights(){
   flights=[];
   airlines.forEach(a=>{
     for(let i=1;i<=2;i++){
-      flights.push({airline:a.name,type:a.type,seats:a.seats,max:a.seats,time:randTime(),gate:a.gate,status:"WAITING"});
+      flights.push({
+        airline:a.name,
+        type:a.type,
+        seats:a.seats,
+        max:a.seats,
+        time:randTime(),
+        gate:a.gate,
+        status:"WAITING"
+      });
     }
   });
 }
 generateFlights();
 
+// Current time in minutes
 function nowMin(){ let d=new Date(); return d.getHours()*60+d.getMinutes(); }
 
+// Update clock and flight statuses
 function updateClock(){
   let d=new Date();
   clock.innerText=d.toLocaleTimeString();
@@ -62,7 +87,7 @@ function updateClock(){
     if(f.status!=="DEPARTED"){
       if(nowMin()>=f.time){
         f.status=(f.seats<f.max)?"DEPARTED":"CANCELLED";
-      } else {
+      }else{
         f.status=(f.seats<f.max)?"WILL FLY":"WAITING";
       }
     }
@@ -71,19 +96,23 @@ function updateClock(){
 }
 setInterval(updateClock,1000);
 
+// Book a seat
 function book(flight){
   if(flight.seats>0){ flight.seats--; render(); }
 }
 
+// Reset for new day
 function newDay(){
   flights.forEach(f=>{ f.seats=f.max; f.status="WAITING"; });
   render();
 }
 
+// Render airport and tower views
 function render(){
   let list=[...flights].sort((a,b)=>a.time-b.time);
   airport.innerHTML=""; tower.innerHTML="";
 
+  // Airport view
   list.forEach(f=>{
     let div=document.createElement("div");
     div.className="flight "+f.type+(f.status==="DEPARTED"?" departed":"");
@@ -102,6 +131,7 @@ function render(){
     airport.appendChild(div);
   });
 
+  // Tower view
   ["1","2","3","Cargo"].forEach(g=>{
     let gate=document.createElement("div");
     gate.className="gate";
@@ -116,9 +146,12 @@ function render(){
   tower.style.display=(view==="tower")?"block":"none";
 }
 
+// Initial render
 render();
 </script>
+
 </body>
 </html>
+
 
 
