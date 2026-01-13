@@ -1,157 +1,266 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>LEGO Airport Game</title>
-
-<!-- ✅ Working favicon -->
-<link rel="icon" type="image/png" href="https://i.imgur.com/swes7O5.png">
+<meta charset="UTF-8">
+<title>LEGO Airport PA System</title>
 
 <style>
-body{margin:0;font-family:'Comic Sans MS',Arial;background:linear-gradient(#7dd7ff,#e9f9ff);}
-header{background:#1976d2;color:white;padding:10px;text-align:center;font-size:26px;}
-#clock{font-size:16px;}
-button{background:#ffeb3b;border:none;padding:8px 12px;margin:4px;border-radius:10px;font-weight:bold;cursor:pointer;}
-.flight{background:white;border-radius:20px;padding:10px;margin:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 5px 0 #bbb;transition:transform 2s,opacity 2s;}
-.small{border-left:10px solid #00c853;}
-.big{border-left:10px solid #ff9100;}
-.cargo{border-left:10px solid #6d4c41;}
-.departed{transform:translateX(1000px);opacity:0;}
-.status{font-weight:bold;}
-.gate{background:#fff;border-radius:20px;padding:10px;margin:10px;box-shadow:0 5px 0 #ccc;}
+body{
+    background: linear-gradient(#0a2342,#06162b);
+    color:white;
+    font-family:Segoe UI;
+    margin:0;
+    text-align:center;
+}
+
+h1{
+    padding:10px;
+    margin:0;
+    background:#06162b;
+}
+
+.panel{
+    background:#0b3d91;
+    margin:15px;
+    padding:15px;
+    border-radius:15px;
+}
+
+input{
+    font-size:20px;
+    padding:8px;
+    border-radius:10px;
+    border:none;
+    width:150px;
+    text-align:center;
+    margin:5px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+    padding:15px;
+}
+
+button{
+    background:#1e90ff;
+    border:none;
+    padding:20px;
+    border-radius:15px;
+    font-size:16px;
+    color:white;
+    cursor:pointer;
+    box-shadow:0 6px #0b3d91;
+}
+
+button:active{
+    box-shadow:0 2px #0b3d91;
+    transform:translateY(4px);
+}
 </style>
 </head>
 
 <body>
 
-<header>
-🧱 LEGO Airport Control Tower  
-<div id="clock"></div>
-<button onclick="view='airport';render()">Airport</button>
-<button onclick="view='tower';render()">🗼 Control Tower</button>
-<button onclick="newDay()">🌞 Next Day</button>
-</header>
+<h1>🛫 LEGO Airport PA System</h1>
 
-<div id="airport"></div>
-<div id="tower" style="display:none;"></div>
+<!-- Pre-Boarding Announcement -->
+<div class="panel">
+<h2>Pre-Boarding Announcement</h2>
+Airline:
+<input id="airline" placeholder="BrickAir">
+Destination:
+<input id="destination" placeholder="Sydney">
+<br><br>
+<button onclick="preboarding()">📢 Pre-Boarding</button>
+</div>
+
+<!-- Gate Boarding Announcement -->
+<div class="panel">
+<h2>Gate Boarding</h2>
+Gate:
+<input id="gate" placeholder="23">
+<br><br>
+<button onclick="boarding()">Boarding Now</button>
+</div>
+
+<!-- Final Boarding Call -->
+<div class="panel">
+<h2>Final Boarding Call</h2>
+Airline:
+<input id="final_airline" placeholder="BrickAir">
+Gate:
+<input id="final_gate" placeholder="23">
+<br><br>
+<button onclick="finalCall()">📢 Final Call</button>
+</div>
+
+<!-- In-Flight Announcement -->
+<div class="panel">
+<h2>In-Flight Announcement</h2>
+Airline:
+<input id="flight_airline" placeholder="BrickAir">
+<br><br>
+<button onclick="inFlight()">📢 In-Flight</button>
+</div>
+
+<!-- Safety Briefing Announcement -->
+<div class="panel">
+<h2>Safety Briefing</h2>
+Airline:
+<input id="safety_airline" placeholder="BrickAir">
+<br><br>
+<button onclick="safetyBriefing()">📢 Safety Briefing</button>
+</div>
+
+<!-- Sound Effects -->
+<div class="grid">
+<button onclick="play('finalcall.mp3')">Final Call Sound</button>
+<button onclick="play('crowd.mp3')">Terminal Ambience</button>
+<button onclick="play('atc.mp3')">ATC Radio</button>
+<button onclick="play('baggage.mp3')">Baggage Carts</button>
+
+<button onclick="play('engine_start.mp3')">Engine Start</button>
+<button onclick="play('taxi.mp3')">Taxi</button>
+<button onclick="play('takeoff.mp3')">Takeoff</button>
+<button onclick="play('landing.mp3')">Landing</button>
+
+<button onclick="play('firetruck.mp3')">Fire Truck</button>
+<button onclick="play('alarm.mp3')">Emergency</button>
+<button onclick="play('rain.mp3')">Rain</button>
+<button onclick="stopAll()">Stop All</button>
+</div>
 
 <script>
-let view="airport";
+// ---------- ElevenLabs API Key & Voice ID ----------
+const ELEVEN_API_KEY = "sk_b863b7824ad9395379893396238dc7b822e5a8e56471413d";
+const VOICE_ID = "WyFXw4PzMbRnp8iLMJwY";
 
-// Airlines and planes
-const airlines=[
- {name:"Star Allegiance ✨",type:"small",seats:2,gate:1},
- {name:"Cargo A 📦",type:"cargo",seats:8,gate:"Cargo"},
- {name:"Police Airlines 🚓",type:"big",seats:6,gate:2},
- {name:"Eagle Alliance 🦅",type:"big",seats:8,gate:3}
-];
-
-let flights=[];
-
-// Generate flights with fixed times
-function generateFlights(){
-  flights = [
-    {airline:"Star Allegiance ✨",type:"small",seats:2,max:2,time:600,gate:1,status:"WAITING"},  // 10:00 AM
-    {airline:"Star Allegiance ✨",type:"small",seats:2,max:2,time:720,gate:1,status:"WAITING"},  // 12:00 PM
-
-    {airline:"Cargo A 📦",type:"cargo",seats:8,max:8,time:630,gate:"Cargo",status:"WAITING"},   // 10:30 AM
-    {airline:"Cargo A 📦",type:"cargo",seats:8,max:8,time:810,gate:"Cargo",status:"WAITING"},   // 1:30 PM
-
-    {airline:"Police Airlines 🚓",type:"big",seats:6,max:6,time:660,gate:2,status:"WAITING"},    // 11:00 AM
-    {airline:"Police Airlines 🚓",type:"big",seats:6,max:6,time:780,gate:2,status:"WAITING"},    // 1:00 PM
-
-    {airline:"Eagle Alliance 🦅",type:"big",seats:8,max:8,time:690,gate:3,status:"WAITING"},     // 11:30 AM
-    {airline:"Eagle Alliance 🦅",type:"big",seats:8,max:8,time:840,gate:3,status:"WAITING"},     // 2:00 PM
-  ];
-}
-generateFlights();
-
-// Current time in minutes
-function nowMin(){ let d=new Date(); return d.getHours()*60+d.getMinutes(); }
-
-// Convert minutes to 12-hour clock
-function formatTime(min){
-  let h=Math.floor(min/60);
-  let m=(min%60).toString().padStart(2,"0");
-  let ap=h>=12?"PM":"AM";
-  h=h%12||12;
-  return h+":"+m+" "+ap;
+// ---------- Sound Effects ----------
+let sounds = [];
+function play(file){
+    let a = new Audio("sounds/" + file);
+    a.play();
+    sounds.push(a);
 }
 
-// Update clock and flight statuses
-function updateClock(){
-  let d=new Date();
-  clock.innerText=d.toLocaleTimeString();
-  flights.forEach(f=>{
-    if(f.status!=="DEPARTED"){
-      if(nowMin()>=f.time){
-        f.status=(f.seats<f.max)?"DEPARTED":"CANCELLED";
-      } else {
-        f.status=(f.seats<f.max)?"WILL FLY":"WAITING";
-      }
-    }
-  });
-  render();
-}
-setInterval(updateClock,1000);
-
-// Book a seat
-function book(flight){
-  if(flight.seats>0){ flight.seats--; render(); }
-}
-
-// Reset for new day
-function newDay(){
-  flights.forEach(f=>{ f.seats=f.max; f.status="WAITING"; });
-  render();
-}
-
-// Render airport and tower views
-function render(){
-  let list=[...flights].sort((a,b)=>a.time-b.time);
-  airport.innerHTML=""; tower.innerHTML="";
-
-  // Airport view
-  list.forEach(f=>{
-    let div=document.createElement("div");
-    div.className="flight "+f.type+(f.status==="DEPARTED"?" departed":"");
-    div.innerHTML=`
-      <div>
-        <b>${f.airline}</b><br>
-        🕒 ${formatTime(f.time)} | Gate ${f.gate}<br>
-        Seats: ${f.seats}/${f.max}
-      </div>
-      <div class="status">${f.status}</div>
-    `;
-    let btn=document.createElement("button");
-    btn.innerText="🧍 Book";
-    btn.onclick=()=>book(f);
-    div.appendChild(btn);
-    airport.appendChild(div);
-  });
-
-  // Tower view
-  ["1","2","3","Cargo"].forEach(g=>{
-    let gate=document.createElement("div");
-    gate.className="gate";
-    gate.innerHTML="<b>Gate "+g+"</b><br>";
-    list.filter(f=>f.gate==g).forEach(f=>{
-      gate.innerHTML+=`${formatTime(f.time)} - ${f.airline} (${f.status})<br>`;
+function stopAll(){
+    sounds.forEach(s => {
+        s.pause();
+        s.currentTime = 0;
     });
-    tower.appendChild(gate);
-  });
-
-  airport.style.display=(view==="airport")?"block":"none";
-  tower.style.display=(view==="tower")?"block":"none";
+    sounds=[];
 }
 
-// Initial render
-render();
+// ---------- Notification Chime ----------
+async function playChime(){
+    const chime = new Audio("sounds/chime.mp3"); // add a short ding sound in your sounds folder
+    return new Promise(resolve=>{
+        chime.onended = resolve;
+        chime.play();
+    });
+}
+
+// ---------- ElevenLabs TTS ----------
+async function speak(text){
+    await playChime();
+
+    const response = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+        {
+            method: "POST",
+            headers: {
+                "xi-api-key": ELEVEN_API_KEY,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                text: text,
+                voice_settings: {
+                    stability: 0.55,
+                    similarity_boost: 0.85
+                }
+            })
+        }
+    );
+
+    const data = await response.arrayBuffer();
+    const blob = new Blob([data], { type: "audio/mpeg" });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play();
+}
+
+// ---------- Pre-Boarding Announcement ----------
+function preboarding(){
+    let airline = document.getElementById("airline").value || "the airline";
+    let dest = document.getElementById("destination").value || "your destination";
+
+    speak(
+        "Attention please. This is the pre boarding announcement for " +
+        airline + " to " + dest + ". " +
+        "We are now inviting those passengers with small children, " +
+        "and any passengers requiring special assistance, " +
+        "to begin boarding at this time. " +
+        "Please have your boarding pass and identification ready. " +
+        "Regular boarding will begin in approximately three minutes time. " +
+        "Thank you."
+    );
+}
+
+// ---------- Gate Boarding ----------
+function boarding(){
+    let gate = document.getElementById("gate").value || "unknown";
+
+    speak(
+        "Attention please. Passengers traveling on this flight, " +
+        "now boarding at gate " + gate + ". Please proceed to the gate."
+    );
+}
+
+// ---------- Final Boarding Call ----------
+function finalCall(){
+    let airline = document.getElementById("final_airline").value || "the airline";
+    let gate = document.getElementById("final_gate").value || "unknown";
+
+    speak(
+        "Attention please. This is the final boarding call for " +
+        airline + " at gate " + gate + ". " +
+        "All remaining passengers, please proceed to the gate immediately. " +
+        "This flight will be departing shortly. Thank you."
+    );
+}
+
+// ---------- In-Flight Announcement ----------
+function inFlight(){
+    let airline = document.getElementById("flight_airline").value || "your airline";
+
+    speak(
+        "Ladies and gentlemen, welcome onboard this flight. " +
+        "We ask that you please fasten your seatbelts at this time " +
+        "and secure all baggage underneath your seat or in the overhead compartments. " +
+        "We also ask that your seats and table trays are in the upright position for take-off. " +
+        "Please turn off all personal electronic devices, including laptops and cell phones. " +
+        "Smoking is prohibited for the duration of the flight. " +
+        "Thank you for choosing " + airline + ". Enjoy your flight."
+    );
+}
+
+// ---------- Safety Briefing ----------
+function safetyBriefing(){
+    let airline = document.getElementById("safety_airline").value || "your airline";
+
+    speak(
+        "Ladies and gentlemen, on behalf of the crew I ask that you please direct your attention to the speakers above as we review the emergency procedures. " +
+        "There is 1 emergency exit on this aircraft. Take a minute to locate the exit closest to you. Note that the nearest exit may be behind you. Count the number of rows to this exit. " +
+        "Should the cabin experience sudden pressure loss, stay calm and listen for instructions from the cabin crew. Oxygen masks will drop down from above your seat. Place the mask over your mouth and nose, like this. Pull the strap to tighten it. " +
+        "If you are traveling with children, make sure that your own mask is on first before helping your children. In the unlikely event of an emergency landing and evacuation, leave your carry-on items behind. " +
+        "Life rafts are located below your seats and emergency lighting will lead you to your closest exit and slide. We ask that you make sure that all carry-on luggage is stowed away safely during the flight. " +
+        "While we wait for take off, please take a moment to review the safety data card in the seat pocket in front of you. " +
+        "Thank you for choosing " + airline + "."
+    );
+}
 </script>
 
 </body>
 </html>
-
-
-
-
-
